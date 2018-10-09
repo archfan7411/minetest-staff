@@ -1,5 +1,14 @@
--- Staff mod by archfan. Written October 2018
+-- Staff mod by archfan with a great deal of help from the community. Written October 2018.
 -- MIT license
+
+-- Constants
+
+local JUMP_HEIGHT = 5
+local SECONDS_PER_POWER = 60
+
+-- Other variables
+
+local isInvisible = false
 
 minetest.register_craftitem("staff:staff", {
 	description = "Staff",
@@ -10,13 +19,26 @@ minetest.register_craftitem("staff:staff", {
 
 		if spell == "jump" then
 			pos = user:get_pos()
-			user:set_pos({x = pos.x, y = pos.y + 5, z = pos.z})
+			user:set_pos({x = pos.x, y = pos.y + JUMP_HEIGHT, z = pos.z})
 		end
 
 		if spell == "invisibility" then
-			user:set_properties({
-				textures = {"staff_player_invisibility.png"},
-			})
+
+			if isInvisible == false then
+				old_skin = user:get_properties()
+				user:set_attribute("oldskin", minetest.serialize(old_skin["textures"]))
+				user:set_properties({
+					textures = {"staff_player_invisibility.png"},
+				})
+				isInvisible = true
+			end
+
+			if isInvisible == true then
+				user:set_properties({
+					textures = minetest.deserialize(user:get_attribute("oldskin"))
+				})
+				isInvisible = false
+			end
 		end
 
 	end,
@@ -28,7 +50,7 @@ local function power(player)
     local current_power =  player:get_attribute("power") or 0
     player:set_attribute("power", current_power + 1)
 	minetest.chat_send_all("your power is at " .. player:get_attribute("power"))
-    minetest.after(1, power, player)
+    minetest.after(SECONDS_PER_POWER, power, player)
 end
 
 minetest.register_on_joinplayer(function(player)
